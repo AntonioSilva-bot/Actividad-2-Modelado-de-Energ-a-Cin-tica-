@@ -279,5 +279,7 @@ K3= (1/2*m3*(V3_Total))'*(1/2*m3*(V3_Total)) + (1/2*W)'*(I3*W);
 K3= simplify (K3);
 %pretty (K3);
 K_Total= simplify (K1+K2+K3);
+pretty(K_Total)
+
 
 toc
