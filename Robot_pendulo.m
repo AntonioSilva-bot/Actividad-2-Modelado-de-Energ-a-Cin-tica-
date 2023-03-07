@@ -192,7 +192,8 @@ K1= (1/2*m1*(V1_Total))'*(1/2*m1*(V1_Total)) + (1/2*W1)'*(I1*W1);
 K1= simplify (K1);
 %pretty (K1);
 
-
 K_Total= simplify (K1);
+pretty(K_Total)
+
 
 toc
