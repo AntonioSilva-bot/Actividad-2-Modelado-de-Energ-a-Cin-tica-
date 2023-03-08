@@ -4,26 +4,26 @@ close all
 clc
 tic
 %Declaración de variables simbólicas
-syms th1(t) th2(t) th3(t)  t  %Angulos de cada articulación
-syms m1 m2 m3 Ixx1 Iyy1 Izz1 Ixx2 Iyy2 Izz2 Ixx3 Iyy3 Izz3 %Masas y matrices de Inercia
-syms t1 t2 t3 %Tiempos
-syms l1 l2 l3 lc1 lc2 lc3  %l=longitud de eslabones y lc=distancia al centro de masa de cada eslabón
+syms th1(t) th2(t) t  %Angulos de cada articulación
+syms m1 m2 Ixx1 Iyy1 Izz1 Ixx2 Iyy2 Izz2 %Masas y matrices de Inercia
+syms t1 t2 %Tiempos
+syms l1 l2 lc1 lc2  %l=longitud de eslabones y lc=distancia al centro de masa de cada eslabón
 syms pi g
- %Creamos el vector de coordenadas articulares
-  Q= [th1; th2; th3];
- %disp('Coordenadas generalizadas');
- %pretty (Q);
- 
- %Creamos el vector de velocidades articulares
-  Qp= diff(Q, t);
- %disp('Velocidades generalizadas');
- %pretty (Qp);
- %Creamos el vector de aceleraciones articulares
-  Qpp= diff(Qp, t);
- %disp('Aceleraciones generalizadas');
- %pretty (Qpp);
+%Creamos el vector de coordenadas articulares
+ Q= [th1; th2];
+%disp('Coordenadas generalizadas');
+%pretty (Q);
+
+%Creamos el vector de velocidades articulares
+Qp= diff(Q, t);
+%disp('Velocidades generalizadas');
+%pretty (Qp);
+%Creamos el vector de aceleraciones articulares
+Qpp= diff(Qp, t);
+%disp('Aceleraciones generalizadas');
+%pretty (Qpp);
 %Configuración del robot, 0 para junta rotacional, 1 para junta prismática
-RP=[0 0 0];
+RP=[0 0];
 %Número de grado de libertad del robot
 GDL= size(RP,2);
 GDL_str= num2str(GDL);
@@ -39,17 +39,12 @@ R(:,:,1)= [cos(th1) -sin(th1)  0;
 P(:,:,2)= [l2*cos(th2); l2*sin(th2);0];
 %Matriz de rotación de la junta 1 respecto a 0
 R(:,:,2)= [cos(th2) -sin(th2)  0;
-           0            0      1;
-           -sin(th2) -cos(th2) 0];
-%Articulación 3 
-%Posición de la articulación 3 respecto a 2
-P(:,:,3)= [l3*cos(th3); l3*sin(th3);0];
-%Matriz de rotación de la junta 3 respecto a 2  0º
-R(:,:,3)=   [cos(th3) -sin(th3)  0;
-             sin(th3)  cos(th3)  0;
-              0         0         1];
+           sin(th2)  cos(th2)  0;
+           0         0         1];
+
 %Creamos un vector de ceros
 Vector_Zeros= zeros(1, 3);
+
 %Inicializamos las matrices de transformación Homogénea locales
 A(:,:,GDL)=simplify([R(:,:,GDL) P(:,:,GDL); Vector_Zeros 1]);
 %Inicializamos las matrices de transformación Homogénea globales
@@ -58,6 +53,8 @@ T(:,:,GDL)=simplify([R(:,:,GDL) P(:,:,GDL); Vector_Zeros 1]);
 PO(:,:,GDL)= P(:,:,GDL); 
 %Inicializamos las matrices de rotación vistas desde el marco de referencia inercial
 RO(:,:,GDL)= R(:,:,GDL); 
+
+
 for i = 1:GDL
     i_str= num2str(i);
    %disp(strcat('Matriz de Transformación local A', i_str));
@@ -82,19 +79,16 @@ end
 %Derivadas parciales de x respecto a th1 y th2
 Jv11= functionalDerivative(PO(1,1,GDL), th1);
 Jv12= functionalDerivative(PO(1,1,GDL), th2);
-Jv13= functionalDerivative(PO(1,1,GDL), th3);
 %Derivadas parciales de y respecto a th1 y th2
 Jv21= functionalDerivative(PO(2,1,GDL), th1);
 Jv22= functionalDerivative(PO(2,1,GDL), th2);
-Jv23= functionalDerivative(PO(2,1,GDL), th3);
 %Derivadas parciales de z respecto a th1 y th2
 Jv31= functionalDerivative(PO(3,1,GDL), th1);
 Jv32= functionalDerivative(PO(3,1,GDL), th2);
-Jv33= functionalDerivative(PO(3,1,GDL), th3);
 %Creamos la matríz del Jacobiano lineal
-jv_d=simplify([Jv11 Jv12 Jv13;
-              Jv21 Jv22 Jv23;
-              Jv31 Jv32 Jv33]);
+jv_d=simplify([Jv11 Jv12;
+               Jv21 Jv22;
+               Jv31 Jv32]);
 %pretty(jv_d);
 %Calculamos el jacobiano lineal de forma analítica
 Jv_a(:,GDL)=PO(:,:,GDL);
@@ -141,21 +135,21 @@ W=simplify (Jw_a*Qp);
 %     pretty(W);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Energía Cinética
+
 %Distancia del origen del eslabón a su centro de masa
 %Vectores de posición respecto al centro de masa
  P01=subs(P(:,:,1)/2, l1, lc1);
  P12=subs(P(:,:,2)/2, l2, lc2);
- P23=subs(P(:,:,3)/2, l3, lc3);
 %Creamos matrices de inercia para cada eslabón
+
 I1=[Ixx1 0 0; 
     0 Iyy1 0; 
     0 0 Izz1];
+
 I2=[Ixx2 0 0; 
     0 Iyy2 0; 
     0 0 Izz2];
-I3=[Ixx3 0 0; 
-    0 Iyy3 0; 
-    0 0 Izz3];
+
 %Función de energía cinética
 %Extraemos las velocidades lineales en cada eje
 V=V(t);
@@ -168,18 +162,19 @@ W_pitch= W(1,1);
 W_roll= W(2,1);
 W_yaw= W(3,1);
 %Calculamos las velocidades para cada eslabón 
+
 %Eslabón 1
 %Calculamos el jacobiano lineal de forma analítica
-Jv_a1(:,GDL-2)=PO(:,:,GDL-2);
-Jw_a1(:,GDL-2)=PO(:,:,GDL-2);
-for k= 1:GDL-2
+Jv_a1(:,GDL-1)=PO(:,:,GDL-1);
+Jw_a1(:,GDL-1)=PO(:,:,GDL-1);
+for k= 1:GDL-1
     if RP(k)==0 
        %Para las juntas de revolución
         try
-            Jv_a1(:,k)= cross(RO(:,3,k-1), PO(:,:,GDL-2)-PO(:,:,k-1));
+            Jv_a1(:,k)= cross(RO(:,3,k-1), PO(:,:,GDL-1)-PO(:,:,k-1));
             Jw_a1(:,k)= RO(:,3,k-1);
         catch
-            Jv_a1(:,k)= cross([0,0,1], PO(:,:,GDL-2));%Matriz de rotación de 0 con respecto a 0 es la Matriz Identidad, la posición previa tambien será 0
+            Jv_a1(:,k)= cross([0,0,1], PO(:,:,GDL-1));%Matriz de rotación de 0 con respecto a 0 es la Matriz Identidad, la posición previa tambien será 0
             Jw_a1(:,k)=[0,0,1];%Si no hay matriz de rotación previa se obtiene la Matriz identidad
          end
      else
@@ -213,51 +208,8 @@ V1=simplify (Jv_a1*Qp(1));
  % disp('Velocidad angular obtenida mediante el Jacobiano angular del Eslabón 1');
 W1=simplify (Jw_a1*Qp(1));
  % pretty(W1);
-%Eslabón 2
-%Calculamos el jacobiano lineal de forma analítica
-Jv_a2(:,GDL-1)=PO(:,:,GDL-1);
-Jw_a2(:,GDL-1)=PO(:,:,GDL-1);
-for k= 1:GDL-1
-    if RP(k)==0 
-       %Para las juntas de revolución
-        try
-            Jv_a2(:,k)= cross(RO(:,3,k-1), PO(:,:,GDL-1)-PO(:,:,k-1));
-            Jw_a2(:,k)= RO(:,3,k-1);
-        catch
-            Jv_a2(:,k)= cross([0,0,1], PO(:,:,GDL-1));%Matriz de rotación de 0 con respecto a 0 es la Matriz Identidad, la posición previa tambien será 0
-            Jw_a2(:,k)=[0,0,1];%Si no hay matriz de rotación previa se obtiene la Matriz identidad
-         end
-     else
-%         %Para las juntas prismáticas
-        try
-            Jv_a2(:,k)= RO(:,3,k-1);
-        catch
-            Jv_a2(:,k)=[0,0,1];
-        end
-            Jw_a2(:,k)=[0,0,0];
-     end
- end    
-%Obtenemos SubMatrices de Jacobianos
-Jv_a2= simplify (Jv_a2);
-Jw_a2= simplify (Jw_a2);
-%disp('Jacobiano lineal obtenido de forma analítica');
-%pretty (Jv_a);
-%disp('Jacobiano ángular obtenido de forma analítica');
-%pretty (Jw_a);
-%Matriz de Jacobiano Completa
-%disp('Matriz de Jacobiano');
-Jac2= [Jv_a2;
-      Jw_a2];
-Jacobiano2= simplify(Jac2);
-% pretty(Jacobiano);
-%Obtenemos vectores de Velocidades Lineales y Angulares
-%disp('Velocidad lineal obtenida mediante el Jacobiano lineal del Eslabón 2');
-V2=simplify (Jv_a2*Qp(1:2));
-% pretty(V2);
-%disp('Velocidad angular obtenida mediante el Jacobiano angular del Eslabón 2');
-W2=simplify (Jw_a2*Qp(1:2));
-% pretty(W2);
-%Calculamos la energía cinética para cada uno de los eslabones
+
+%Analisis de los eslabones
 %Eslabón 1
 V1_Total= V1+cross(W1,P01);
 K1= (1/2*m1*(V1_Total))'*(1/2*m1*(V1_Total)) + (1/2*W1)'*(I1*W1);
@@ -265,19 +217,12 @@ K1= (1/2*m1*(V1_Total))'*(1/2*m1*(V1_Total)) + (1/2*W1)'*(I1*W1);
 K1= simplify (K1);
 %pretty (K1);
 %Eslabón 2
-V2_Total= V2+cross(W2,P12);
-K2= (1/2*m2*(V2_Total))'*(1/2*m2*(V2_Total)) + (1/2*W2)'*(I2*W2);
-%disp('Energía Cinética en el Eslabón 2');
+V2_Total= V1+cross(W1,P01);
+K2= (1/2*m1*(V2_Total))'*(1/2*m1*(V2_Total)) + (1/2*W1)'*(I1*W1);
+%disp('Energía Cinética en el Eslabón 1');
 K2= simplify (K2);
-%pretty (K2);
-%Eslabón 3
-V3_Total= V+cross(W,P23);
-K3= (1/2*m3*(V3_Total))'*(1/2*m3*(V3_Total)) + (1/2*W)'*(I3*W);
-%disp('Energía Cinética en el Eslabón 3');
-K3= simplify (K3);
-%pretty (K3);
-K_Total= simplify (K1+K2+K3);
-pretty(K_Total)
 
+K_Total= simplify (K1+K2);
+pretty(K_Total)
 
 toc
