@@ -29,7 +29,7 @@ GDL= size(RP,2);
 GDL_str= num2str(GDL);
 %Articulación 1 
 %Posición de la articulación 1 respecto a 0
-P(:,:,1)= [0;0;l1];
+P(:,:,1)= [l1*cos(th1); l1*sin(th1);0];
 %Matriz de rotación de la junta 1 respecto a 0.... 
 R(:,:,1)= [cos(th1) -sin(th1)  0;
            sin(th1)  cos(th1)  0;
